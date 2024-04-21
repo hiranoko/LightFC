@@ -5,46 +5,54 @@
 @date 2016
 """
 
-import sys
-import copy
 import collections
+import copy
+import sys
+
 import numpy as np
 
 try:
     import trax
 except ImportError:
-    raise Exception('TraX support not found. Please add trax module to Python path.')
+    raise Exception("TraX support not found. Please add trax module to Python path.")
 
-Rectangle = collections.namedtuple('Rectangle', ['x', 'y', 'width', 'height'])
-Point = collections.namedtuple('Point', ['x', 'y'])
-Polygon = collections.namedtuple('Polygon', ['points'])
-Empty = collections.namedtuple('Empty', [])
+Rectangle = collections.namedtuple("Rectangle", ["x", "y", "width", "height"])
+Point = collections.namedtuple("Point", ["x", "y"])
+Polygon = collections.namedtuple("Polygon", ["points"])
+Empty = collections.namedtuple("Empty", [])
+
 
 class VOT(object):
-    """ Base class for Python VOT integration """
+    """Base class for Python VOT integration"""
 
     def __init__(self, region_format, channels=None):
-        """ Constructor
+        """Constructor
         Args:
             region_format: Region format options
         """
-        assert (region_format in [trax.Region.RECTANGLE, trax.Region.POLYGON, trax.Region.MASK])
+        assert region_format in [
+            trax.Region.RECTANGLE,
+            trax.Region.POLYGON,
+            trax.Region.MASK,
+        ]
 
         if channels is None:
-            channels = ['color']
-        elif channels == 'rgbd':
-            channels = ['color', 'depth']
-        elif channels == 'rgbt':
-            channels = ['color', 'ir']
-        elif channels == 'ir':
-            channels = ['ir']
+            channels = ["color"]
+        elif channels == "rgbd":
+            channels = ["color", "depth"]
+        elif channels == "rgbt":
+            channels = ["color", "ir"]
+        elif channels == "ir":
+            channels = ["ir"]
         else:
-            raise Exception('Illegal configuration {}.'.format(channels))
+            raise Exception("Illegal configuration {}.".format(channels))
 
         # self._trax = trax.Server([region_format], [trax.Image.PATH], channels, customMetadata=dict(vot="python"))
-        self._trax = trax.Server([region_format], [trax.Image.PATH], channels, metadata=dict(vot="python"))
+        self._trax = trax.Server(
+            [region_format], [trax.Image.PATH], channels, metadata=dict(vot="python")
+        )
         request = self._trax.wait()
-        assert (request.type == 'initialize')
+        assert request.type == "initialize"
 
         for object, _ in request.objects:
             if isinstance(object, trax.Polygon):
@@ -75,10 +83,12 @@ class VOT(object):
         Arguments:
             region: region for the frame
         """
+
         def convert(a):
-            """ Convert region to TraX format """
+            """Convert region to TraX format"""
             # If region is None, return empty region
-            if region is None: return trax.Rectangle.create(0, 0, 0, 0)
+            if region is None:
+                return trax.Rectangle.create(0, 0, 0, 0)
             assert isinstance(region, (Empty, Rectangle, Polygon, np.ndarray))
             if isinstance(region, Empty):
                 return trax.Rectangle.create(0, 0, 0, 0)
@@ -87,12 +97,13 @@ class VOT(object):
             elif isinstance(region, np.ndarray):
                 return trax.Mask.create(region)
             else:
-                return trax.Rectangle.create(region.x, region.y, region.width, region.height)
-
+                return trax.Rectangle.create(
+                    region.x, region.y, region.width, region.height
+                )
 
         properties = {}
         if not confidence is None:
-            properties['confidence'] = confidence
+            properties["confidence"] = confidence
         status = [(convert(region), properties)]
 
         self._trax.status(status, {})
@@ -110,7 +121,7 @@ class VOT(object):
 
         request = self._trax.wait()
 
-        if request.type == 'frame':
+        if request.type == "frame":
             image = [x.path() for k, x in request.image.items()]
             if len(image) == 1:
                 return image[0]
@@ -119,7 +130,7 @@ class VOT(object):
             return None
 
     def quit(self):
-        if hasattr(self, '_trax'):
+        if hasattr(self, "_trax"):
             self._trax.quit()
 
     def __del__(self):

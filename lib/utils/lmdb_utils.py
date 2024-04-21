@@ -1,7 +1,8 @@
+import json
+
+import cv2
 import lmdb
 import numpy as np
-import cv2
-import json
 
 LMDB_ENVS = dict()
 LMDB_HANDLES = dict()
@@ -43,11 +44,11 @@ def decode_json(lmdb_fname, key_name):
 
 if __name__ == "__main__":
     lmdb_fname = "/data/sda/v-yanbi/iccv21/LittleBoy_clean/data/got10k_lmdb"
-    '''Decode image'''
+    """Decode image"""
     # key_name = "test/GOT-10k_Test_000001/00000001.jpg"
     # img = decode_img(lmdb_fname, key_name)
     # cv2.imwrite("001.jpg", img)
-    '''Decode str'''
+    """Decode str"""
     # key_name = "test/list.txt"
     # key_name = "train/GOT-10k_Train_000001/groundtruth.txt"
     key_name = "train/GOT-10k_Train_000001/absence.label"

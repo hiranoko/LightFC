@@ -1,24 +1,26 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+import os
+import sys
+import time
 
 import cv2
 import torch
 import vot
-import sys
-import time
-import os
-from lib.test.evaluation import Tracker
-from lib.test.vot_utils.vot import VOT
-from lib.test.vot_utils.utils import *
 
-'''lightfc class'''
+from lib.test.evaluation import Tracker
+from lib.test.vot_utils.utils import *
+from lib.test.vot_utils.vot import VOT
+
+"""lightfc class"""
 
 
 class lightfc_vot20(object):
-    def __init__(self, tracker_name='lightfc',
-                 para_name='mobilnetv2_p_pwcorr_se_scf_sc_iab_sc_adj_concat_repn33_se_conv33_center_wiou'):
+    def __init__(
+        self,
+        tracker_name="lightfc",
+        para_name="mobilnetv2_p_pwcorr_se_scf_sc_iab_sc_adj_concat_repn33_se_conv33_center_wiou",
+    ):
         # create tracker
         tracker_info = Tracker(tracker_name, para_name, "vot20", None, env_num=0)
         params = tracker_info.get_parameters()
@@ -31,21 +33,22 @@ class lightfc_vot20(object):
         # init on the 1st frame
         region = rect_from_mask(mask)
         self.H, self.W, _ = img_rgb.shape
-        init_info = {'init_bbox': region}
+        init_info = {"init_bbox": region}
         _ = self.tracker.initialize(img_rgb, init_info)
-
 
     def track(self, img_rgb):
         # track
         outputs = self.tracker.track(img_rgb)
-        pred_bbox = outputs['target_bbox']
+        pred_bbox = outputs["target_bbox"]
         final_mask = mask_from_rect(pred_bbox, (self.W, self.H))
         return pred_bbox, final_mask
 
 
 def run_vot_exp(tracker_name, para_name, vis=False):
     torch.set_num_threads(1)
-    save_root = os.path.join('/data/sda/v-yanbi/iccv21/LittleBoy/vot20_debug', para_name)
+    save_root = os.path.join(
+        "/data/sda/v-yanbi/iccv21/LittleBoy/vot20_debug", para_name
+    )
     if vis and (not os.path.exists(save_root)):
         os.mkdir(save_root)
     tracker = lightfc_vot20(tracker_name=tracker_name, para_name=para_name)
@@ -55,8 +58,8 @@ def run_vot_exp(tracker_name, para_name, vis=False):
     if not imagefile:
         sys.exit(0)
     if vis:
-        '''for vis'''
-        seq_name = imagefile.split('/')[-3]
+        """for vis"""
+        seq_name = imagefile.split("/")[-3]
         save_v_dir = os.path.join(save_root, seq_name)
         if not os.path.exists(save_v_dir):
             os.mkdir(save_v_dir)
@@ -78,17 +81,22 @@ def run_vot_exp(tracker_name, para_name, vis=False):
         b1, m = tracker.track(image)
         handle.report(m)
         if vis:
-            '''Visualization'''
+            """Visualization"""
             # original image
             image_ori = image[:, :, ::-1].copy()  # RGB --> BGR
-            image_name = imagefile.split('/')[-1]
+            image_name = imagefile.split("/")[-1]
             save_path = os.path.join(save_dir, image_name)
             cv2.imwrite(save_path, image_ori)
             # tracker box
             image_b = image_ori.copy()
-            cv2.rectangle(image_b, (int(b1[0]), int(b1[1])),
-                          (int(b1[0] + b1[2]), int(b1[1] + b1[3])), (0, 0, 255), 2)
-            image_b_name = image_name.replace('.jpg', '_bbox.jpg')
+            cv2.rectangle(
+                image_b,
+                (int(b1[0]), int(b1[1])),
+                (int(b1[0] + b1[2]), int(b1[1] + b1[3])),
+                (0, 0, 255),
+                2,
+            )
+            image_b_name = image_name.replace(".jpg", "_bbox.jpg")
             save_path = os.path.join(save_dir, image_b_name)
             cv2.imwrite(save_path, image_b)
             # original image + mask
@@ -98,6 +106,6 @@ def run_vot_exp(tracker_name, para_name, vis=False):
             contours, _ = cv2.findContours(m, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             image_m = cv2.drawContours(image_m, contours, -1, (0, 255, 255), 2)
             image_m = image_m.clip(0, 255).astype(np.uint8)
-            image_mask_name_m = image_name.replace('.jpg', '_mask.jpg')
+            image_mask_name_m = image_name.replace(".jpg", "_mask.jpg")
             save_path = os.path.join(save_dir, image_mask_name_m)
             cv2.imwrite(save_path, image_m)

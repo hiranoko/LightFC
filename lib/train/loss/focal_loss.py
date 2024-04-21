@@ -19,9 +19,17 @@ class FocalLoss(nn.Module, ABC):
         # clamp min value is set to 1e-12 to maintain the numerical stability
         prediction = torch.clamp(prediction, 1e-12)
 
-        positive_loss = torch.log(prediction) * torch.pow(1 - prediction, self.alpha) * positive_index
-        negative_loss = torch.log(1 - prediction) * torch.pow(prediction,
-                                                              self.alpha) * negative_weights * negative_index
+        positive_loss = (
+            torch.log(prediction)
+            * torch.pow(1 - prediction, self.alpha)
+            * positive_index
+        )
+        negative_loss = (
+            torch.log(1 - prediction)
+            * torch.pow(prediction, self.alpha)
+            * negative_weights
+            * negative_index
+        )
 
         num_positive = positive_index.float().sum()
         positive_loss = positive_loss.sum()
@@ -44,6 +52,7 @@ class LBHinge(nn.Module):
         threshold:  Threshold to use for the hinge.
         clip:  Clip the loss if it is above this value.
     """
+
     def __init__(self, error_metric=nn.MSELoss(), threshold=None, clip=None):
         super().__init__()
         self.error_metric = error_metric
@@ -52,7 +61,7 @@ class LBHinge(nn.Module):
 
     def forward(self, prediction, label, target_bb=None):
         negative_mask = (label < self.threshold).float()
-        positive_mask = (1.0 - negative_mask)
+        positive_mask = 1.0 - negative_mask
 
         prediction = negative_mask * F.relu(prediction) + positive_mask * prediction
 

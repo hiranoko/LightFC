@@ -1,4 +1,6 @@
 from lib.models import *
+
+
 class Registry(object):
     """
     The registry that provides name -> object mapping, to support third-party
@@ -26,10 +28,12 @@ class Registry(object):
 
     def _do_register(self, name, obj, suffix=None):
         if isinstance(suffix, str):
-            name = name + '_' + suffix
+            name = name + "_" + suffix
 
-        assert (name not in self._obj_map), (f"An object named '{name}' was already registered "
-                                             f"in '{self._name}' registry!")
+        assert name not in self._obj_map, (
+            f"An object named '{name}' was already registered "
+            f"in '{self._name}' registry!"
+        )
         self._obj_map[name] = obj
 
     def register(self, obj=None, suffix=None):
@@ -51,13 +55,15 @@ class Registry(object):
         name = obj.__name__
         self._do_register(name, obj, suffix)
 
-    def get(self, name, suffix='basicsr'):
+    def get(self, name, suffix="basicsr"):
         ret = self._obj_map.get(name)
         if ret is None:
-            ret = self._obj_map.get(name + '_' + suffix)
-            print(f'Name {name} is not found, use name: {name}_{suffix}!')
+            ret = self._obj_map.get(name + "_" + suffix)
+            print(f"Name {name} is not found, use name: {name}_{suffix}!")
         if ret is None:
-            raise KeyError(f"No object named '{name}' found in '{self._name}' registry!")
+            raise KeyError(
+                f"No object named '{name}' found in '{self._name}' registry!"
+            )
         return ret
 
     def __contains__(self, name):
@@ -70,5 +76,5 @@ class Registry(object):
         return self._obj_map.keys()
 
 
-MODEL_REGISTRY = Registry('model')
-TRACKER_REGISTRY = Registry('tracker')
+MODEL_REGISTRY = Registry("model")
+TRACKER_REGISTRY = Registry("tracker")

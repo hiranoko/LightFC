@@ -9,11 +9,12 @@ from lib.train.admin import env_settings
 from lib.train.data import jpeg4py_loader
 from lib.train.dataset.COCO_tool import COCO
 from lib.utils.lmdb_utils import decode_img, decode_json
+
 from .base_video_dataset import BaseVideoDataset
 
 
 class MSCOCOSeq_lmdb(BaseVideoDataset):
-    """ The COCO dataset. COCO is an image dataset. Thus, we treat each image as a sequence of length 1.
+    """The COCO dataset. COCO is an image dataset. Thus, we treat each image as a sequence of length 1.
 
     Publication:
         Microsoft COCO: Common Objects in Context.
@@ -35,8 +36,15 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
     Note: You also have to install the coco pythonAPI from https://github.com/cocodataset/cocoapi.
     """
 
-    def __init__(self, root=None, image_loader=jpeg4py_loader, data_fraction=None, split="train", version="2014",
-                 env_num=None):
+    def __init__(
+        self,
+        root=None,
+        image_loader=jpeg4py_loader,
+        data_fraction=None,
+        split="train",
+        version="2014",
+        env_num=None,
+    ):
         """
         args:
             root - path to the coco dataset.
@@ -49,16 +57,16 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
             version - version of coco dataset (2014 or 2017)
         """
         root = env_settings(env_num).coco_dir if root is None else root
-        super().__init__('COCO_lmdb', root, image_loader)
+        super().__init__("COCO_lmdb", root, image_loader)
         self.root = root
-        self.img_pth = 'images/{}{}/'.format(split, version)
-        self.anno_path = 'annotations/instances_{}{}.json'.format(split, version)
+        self.img_pth = "images/{}{}/".format(split, version)
+        self.anno_path = "annotations/instances_{}{}.json".format(split, version)
 
         # Load the COCO set.
-        print('loading annotations into memory...')
+        print("loading annotations into memory...")
         tic = time.time()
         coco_json = decode_json(root, self.anno_path)
-        print('Done (t={:0.2f}s)'.format(time.time() - tic))
+        print("Done (t={:0.2f}s)".format(time.time() - tic))
 
         self.coco_set = COCO(coco_json)
 
@@ -69,12 +77,14 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
         self.sequence_list = self._get_sequence_list()
 
         if data_fraction is not None:
-            self.sequence_list = random.sample(self.sequence_list, int(len(self.sequence_list) * data_fraction))
+            self.sequence_list = random.sample(
+                self.sequence_list, int(len(self.sequence_list) * data_fraction)
+            )
         self.seq_per_class = self._build_seq_per_class()
 
     def _get_sequence_list(self):
         ann_list = list(self.coco_set.anns.keys())
-        seq_list = [a for a in ann_list if self.coco_set.anns[a]['iscrowd'] == 0]
+        seq_list = [a for a in ann_list if self.coco_set.anns[a]["iscrowd"] == 0]
 
         return seq_list
 
@@ -85,7 +95,7 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
         return len(self.class_list)
 
     def get_name(self):
-        return 'coco_lmdb'
+        return "coco_lmdb"
 
     def has_class_info(self):
         return True
@@ -93,7 +103,7 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
     def get_class_list(self):
         class_list = []
         for cat_id in self.cats.keys():
-            class_list.append(self.cats[cat_id]['name'])
+            class_list.append(self.cats[cat_id]["name"])
         return class_list
 
     def has_segmentation_info(self):
@@ -105,7 +115,7 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
     def _build_seq_per_class(self):
         seq_per_class = {}
         for i, seq in enumerate(self.sequence_list):
-            class_name = self.cats[self.coco_set.anns[seq]['category_id']]['name']
+            class_name = self.cats[self.coco_set.anns[seq]["category_id"]]["name"]
             if class_name not in seq_per_class:
                 seq_per_class[class_name] = [i]
             else:
@@ -119,16 +129,16 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
     def get_sequence_info(self, seq_id):
         anno = self._get_anno(seq_id)
 
-        bbox = torch.Tensor(anno['bbox']).view(1, 4)
+        bbox = torch.Tensor(anno["bbox"]).view(1, 4)
 
         mask = torch.Tensor(self.coco_set.annToMask(anno)).unsqueeze(dim=0)
 
-        '''2021.1.3 To avoid too small bounding boxes. Here we change the threshold to 50 pixels'''
+        """2021.1.3 To avoid too small bounding boxes. Here we change the threshold to 50 pixels"""
         valid = (bbox[:, 2] > 50) & (bbox[:, 3] > 50)
 
         visible = valid.clone().byte()
 
-        return {'bbox': bbox, 'mask': mask, 'valid': valid, 'visible': visible}
+        return {"bbox": bbox, "mask": mask, "valid": valid, "visible": visible}
 
     def _get_anno(self, seq_id):
         anno = self.coco_set.anns[self.sequence_list[seq_id]]
@@ -136,30 +146,44 @@ class MSCOCOSeq_lmdb(BaseVideoDataset):
         return anno
 
     def _get_frames(self, seq_id):
-        path = self.coco_set.loadImgs([self.coco_set.anns[self.sequence_list[seq_id]]['image_id']])[0]['file_name']
+        path = self.coco_set.loadImgs(
+            [self.coco_set.anns[self.sequence_list[seq_id]]["image_id"]]
+        )[0]["file_name"]
         # img = self.image_loader(os.path.join(self.img_pth, path))
         img = decode_img(self.root, os.path.join(self.img_pth, path))
         return img
 
     def get_meta_info(self, seq_id):
         try:
-            cat_dict_current = self.cats[self.coco_set.anns[self.sequence_list[seq_id]]['category_id']]
-            object_meta = OrderedDict({'object_class_name': cat_dict_current['name'],
-                                       'motion_class': None,
-                                       'major_class': cat_dict_current['supercategory'],
-                                       'root_class': None,
-                                       'motion_adverb': None})
+            cat_dict_current = self.cats[
+                self.coco_set.anns[self.sequence_list[seq_id]]["category_id"]
+            ]
+            object_meta = OrderedDict(
+                {
+                    "object_class_name": cat_dict_current["name"],
+                    "motion_class": None,
+                    "major_class": cat_dict_current["supercategory"],
+                    "root_class": None,
+                    "motion_adverb": None,
+                }
+            )
         except:
-            object_meta = OrderedDict({'object_class_name': None,
-                                       'motion_class': None,
-                                       'major_class': None,
-                                       'root_class': None,
-                                       'motion_adverb': None})
+            object_meta = OrderedDict(
+                {
+                    "object_class_name": None,
+                    "motion_class": None,
+                    "major_class": None,
+                    "root_class": None,
+                    "motion_adverb": None,
+                }
+            )
         return object_meta
 
     def get_class_name(self, seq_id):
-        cat_dict_current = self.cats[self.coco_set.anns[self.sequence_list[seq_id]]['category_id']]
-        return cat_dict_current['name']
+        cat_dict_current = self.cats[
+            self.coco_set.anns[self.sequence_list[seq_id]]["category_id"]
+        ]
+        return cat_dict_current["name"]
 
     def get_frames(self, seq_id=None, frame_ids=None, anno=None):
         # COCO is an image dataset. Thus we replicate the image denoted by seq_id len(frame_ids) times, and return a

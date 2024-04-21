@@ -1,19 +1,21 @@
-import torch
+import json
 import os
 import os.path
-import numpy as np
 import random
 from collections import OrderedDict
 
-from lib.train.data import jpeg4py_loader
-from .base_video_dataset import BaseVideoDataset
+import numpy as np
+import torch
+
 from lib.train.admin import env_settings
-import json
+from lib.train.data import jpeg4py_loader
 from lib.utils.lmdb_utils import decode_img, decode_str
+
+from .base_video_dataset import BaseVideoDataset
 
 
 def list_sequences(root):
-    """ Lists all the videos in the input set_ids. Returns a list of tuples (set_id, video_name)
+    """Lists all the videos in the input set_ids. Returns a list of tuples (set_id, video_name)
 
     args:
         root: Root directory to TrackingNet
@@ -28,7 +30,7 @@ def list_sequences(root):
 
 
 class TrackingNet_lmdb(BaseVideoDataset):
-    """ TrackingNet dataset.
+    """TrackingNet dataset.
 
     Publication:
         TrackingNet: A Large-Scale Dataset and Benchmark for Object Tracking in the Wild.
@@ -38,7 +40,15 @@ class TrackingNet_lmdb(BaseVideoDataset):
 
     Download the dataset using the toolkit https://github.com/SilvioGiancola/TrackingNet-devkit.
     """
-    def __init__(self, root=None, image_loader=jpeg4py_loader, set_ids=None, data_fraction=None,env_num=None):
+
+    def __init__(
+        self,
+        root=None,
+        image_loader=jpeg4py_loader,
+        set_ids=None,
+        data_fraction=None,
+        env_num=None,
+    ):
         """
         args:
             root        - The path to the TrackingNet folder, containing the training sets.
@@ -49,7 +59,7 @@ class TrackingNet_lmdb(BaseVideoDataset):
             data_fraction - Fraction of dataset to be used. The complete dataset is used by default
         """
         root = env_settings(env_num).trackingnet_lmdb_dir if root is None else root
-        super().__init__('TrackingNet_lmdb', root, image_loader)
+        super().__init__("TrackingNet_lmdb", root, image_loader)
 
         if set_ids is None:
             set_ids = [i for i in range(12)]
@@ -61,7 +71,9 @@ class TrackingNet_lmdb(BaseVideoDataset):
         self.sequence_list = list_sequences(self.root)
 
         if data_fraction is not None:
-            self.sequence_list = random.sample(self.sequence_list, int(len(self.sequence_list) * data_fraction))
+            self.sequence_list = random.sample(
+                self.sequence_list, int(len(self.sequence_list) * data_fraction)
+            )
 
         self.seq_to_class_map, self.seq_per_class = self._load_class_info()
 
@@ -70,15 +82,20 @@ class TrackingNet_lmdb(BaseVideoDataset):
         self.class_list.sort()
 
     def _load_class_info(self):
-        ltr_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
-        class_map_path = os.path.join(ltr_path, 'data_specs', 'trackingnet_classmap.txt')
+        ltr_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
+        class_map_path = os.path.join(
+            ltr_path, "data_specs", "trackingnet_classmap.txt"
+        )
 
-        with open(class_map_path, 'r') as f:
-            seq_to_class_map = {seq_class.split('\t')[0]: seq_class.rstrip().split('\t')[1] for seq_class in f}
+        with open(class_map_path, "r") as f:
+            seq_to_class_map = {
+                seq_class.split("\t")[0]: seq_class.rstrip().split("\t")[1]
+                for seq_class in f
+            }
 
         seq_per_class = {}
         for i, seq in enumerate(self.sequence_list):
-            class_name = seq_to_class_map.get(seq[1], 'Unknown')
+            class_name = seq_to_class_map.get(seq[1], "Unknown")
             if class_name not in seq_per_class:
                 seq_per_class[class_name] = [i]
             else:
@@ -87,7 +104,7 @@ class TrackingNet_lmdb(BaseVideoDataset):
         return seq_to_class_map, seq_per_class
 
     def get_name(self):
-        return 'trackingnet_lmdb'
+        return "trackingnet_lmdb"
 
     def has_class_info(self):
         return True
@@ -98,9 +115,11 @@ class TrackingNet_lmdb(BaseVideoDataset):
     def _read_bb_anno(self, seq_id):
         set_id = self.sequence_list[seq_id][0]
         vid_name = self.sequence_list[seq_id][1]
-        gt_str_list = decode_str(os.path.join(self.root, "TRAIN_%d_lmdb" % set_id),
-                                 os.path.join("anno", vid_name + ".txt")).split('\n')[:-1]
-        gt_list = [list(map(float, line.split(','))) for line in gt_str_list]
+        gt_str_list = decode_str(
+            os.path.join(self.root, "TRAIN_%d_lmdb" % set_id),
+            os.path.join("anno", vid_name + ".txt"),
+        ).split("\n")[:-1]
+        gt_list = [list(map(float, line.split(","))) for line in gt_str_list]
         gt_arr = np.array(gt_list).astype(np.float32)
         return torch.tensor(gt_arr)
 
@@ -109,13 +128,15 @@ class TrackingNet_lmdb(BaseVideoDataset):
 
         valid = (bbox[:, 2] > 0) & (bbox[:, 3] > 0)
         visible = valid.clone().byte()
-        return {'bbox': bbox, 'valid': valid, 'visible': visible}
+        return {"bbox": bbox, "valid": valid, "visible": visible}
 
     def _get_frame(self, seq_id, frame_id):
         set_id = self.sequence_list[seq_id][0]
         vid_name = self.sequence_list[seq_id][1]
-        return decode_img(os.path.join(self.root, "TRAIN_%d_lmdb" % set_id),
-                          os.path.join("frames", vid_name, str(frame_id) + ".jpg"))
+        return decode_img(
+            os.path.join(self.root, "TRAIN_%d_lmdb" % set_id),
+            os.path.join("frames", vid_name, str(frame_id) + ".jpg"),
+        )
 
     def _get_class(self, seq_id):
         seq_name = self.sequence_list[seq_id][1]
@@ -138,10 +159,14 @@ class TrackingNet_lmdb(BaseVideoDataset):
 
         obj_class = self._get_class(seq_id)
 
-        object_meta = OrderedDict({'object_class_name': obj_class,
-                                   'motion_class': None,
-                                   'major_class': None,
-                                   'root_class': None,
-                                   'motion_adverb': None})
+        object_meta = OrderedDict(
+            {
+                "object_class_name": obj_class,
+                "motion_class": None,
+                "major_class": None,
+                "root_class": None,
+                "motion_adverb": None,
+            }
+        )
 
         return frame_list, anno_frames, object_meta

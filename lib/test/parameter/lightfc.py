@@ -1,7 +1,8 @@
 import os
-from lib.utils.load import load_yaml
-from lib.test.utils import TrackerParams
+
 from lib.test.evaluation.environment import env_settings
+from lib.test.utils import TrackerParams
+from lib.utils.load import load_yaml
 
 
 def parameters(yaml_name: str, env_num: int):
@@ -10,7 +11,7 @@ def parameters(yaml_name: str, env_num: int):
     prj_dir = env_settings(env_num).prj_dir
     save_dir = env_settings(env_num).save_dir
     # update default config from yaml file
-    yaml_file = os.path.join(prj_dir, 'experiments/lightfc/%s.yaml' % yaml_name)
+    yaml_file = os.path.join(prj_dir, "experiments/lightfc/%s.yaml" % yaml_name)
     params.cfg = load_yaml(yaml_file)
     print("test config: ", params.cfg)
     params.tracker_param = yaml_name
@@ -22,8 +23,11 @@ def parameters(yaml_name: str, env_num: int):
     params.search_size = params.cfg.TEST.SEARCH_SIZE
 
     # Network checkpoint path
-    params.checkpoint = os.path.join(save_dir, "checkpoints/train/lightfc/%s/lightfc_ep%04d.pth.tar" %
-                                     (yaml_name, params.cfg.TEST.EPOCH))
+    params.checkpoint = os.path.join(
+        save_dir,
+        "checkpoints/train/lightfc/%s/lightfc_ep%04d.pth.tar"
+        % (yaml_name, params.cfg.TEST.EPOCH),
+    )
 
     params.save_all_boxes = False
 

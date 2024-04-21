@@ -5,7 +5,6 @@ from _collections import OrderedDict
 
 from lib.train.data.processing_utils import transform_image_to_crop
 
-
 # from lib.vis.visdom_cus import Visdom
 
 
@@ -33,17 +32,21 @@ class BaseTracker:
         else:
             box = (box,)
         if segmentation is None:
-            self.visdom.register((image, *box), 'Tracking', 1, 'Tracking')
+            self.visdom.register((image, *box), "Tracking", 1, "Tracking")
         else:
-            self.visdom.register((image, *box, segmentation), 'Tracking', 1, 'Tracking')
+            self.visdom.register((image, *box, segmentation), "Tracking", 1, "Tracking")
 
-    def transform_bbox_to_crop(self, box_in, resize_factor, device, box_extract=None, crop_type='template'):
+    def transform_bbox_to_crop(
+        self, box_in, resize_factor, device, box_extract=None, crop_type="template"
+    ):
         # box_in: list [x1, y1, w, h], not normalized
         # box_extract: same as box_in
         # out bbox: Torch.tensor [1, 1, 4], x1y1wh, normalized
-        if crop_type == 'template':
-            crop_sz = torch.Tensor([self.params.template_size, self.params.template_size])
-        elif crop_type == 'search':
+        if crop_type == "template":
+            crop_sz = torch.Tensor(
+                [self.params.template_size, self.params.template_size]
+            )
+        elif crop_type == "search":
             crop_sz = torch.Tensor([self.params.search_size, self.params.search_size])
         else:
             raise NotImplementedError
@@ -53,7 +56,9 @@ class BaseTracker:
             box_extract = box_in
         else:
             box_extract = torch.tensor(box_extract)
-        template_bbox = transform_image_to_crop(box_in, box_extract, resize_factor, crop_sz, normalize=True)
+        template_bbox = transform_image_to_crop(
+            box_in, box_extract, resize_factor, crop_sz, normalize=True
+        )
         template_bbox = template_bbox.view(1, 1, 4).to(device)
 
         return template_bbox
@@ -63,7 +68,7 @@ class BaseTracker:
         self.pause_mode = False
         self.step = False
         self.next_seq = False
-        if debug > 0 and visdom_info.get('use_visdom', True):
+        if debug > 0 and visdom_info.get("use_visdom", True):
             try:
                 # self.visdom = Visdom(debug, {'handler': self._visdom_ui_handler, 'win_id': 'Tracking'},
                 #                      visdom_info=visdom_info)
@@ -76,16 +81,18 @@ class BaseTracker:
                 # self.visdom.register(help_text, 'text', 1, 'Help')
             except:
                 time.sleep(0.5)
-                print('!!! WARNING: Visdom could not start, so using matplotlib visualization instead !!!\n'
-                      '!!! Start Visdom in a separate terminal window by typing \'visdom\' !!!')
+                print(
+                    "!!! WARNING: Visdom could not start, so using matplotlib visualization instead !!!\n"
+                    "!!! Start Visdom in a separate terminal window by typing 'visdom' !!!"
+                )
 
     def _visdom_ui_handler(self, data):
-        if data['event_type'] == 'KeyPress':
-            if data['key'] == ' ':
+        if data["event_type"] == "KeyPress":
+            if data["key"] == " ":
                 self.pause_mode = not self.pause_mode
 
-            elif data['key'] == 'ArrowRight' and self.pause_mode:
+            elif data["key"] == "ArrowRight" and self.pause_mode:
                 self.step = True
 
-            elif data['key'] == 'n':
+            elif data["key"] == "n":
                 self.next_seq = True

@@ -1,7 +1,8 @@
-import random
-import numpy as np
 import math
+import random
+
 import cv2 as cv
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as tvisf
@@ -36,8 +37,8 @@ class Transform:
         if len(transforms) == 1 and isinstance(transforms[0], (list, tuple)):
             transforms = transforms[0]
         self.transforms = transforms
-        self._valid_inputs = ['image', 'coords', 'bbox', 'mask', 'att']
-        self._valid_args = ['joint', 'new_roll']
+        self._valid_inputs = ["image", "coords", "bbox", "mask", "att"]
+        self._valid_args = ["joint", "new_roll"]
         self._valid_all = self._valid_inputs + self._valid_args
 
     def __call__(self, **inputs):
@@ -45,12 +46,13 @@ class Transform:
         for v in inputs.keys():
             if v not in self._valid_all:
                 raise ValueError(
-                    'Incorrect input \"{}\" to transform. Only supports inputs {} and arguments {}.'.format(v,
-                                                                                                            self._valid_inputs,
-                                                                                                            self._valid_args))
+                    'Incorrect input "{}" to transform. Only supports inputs {} and arguments {}.'.format(
+                        v, self._valid_inputs, self._valid_args
+                    )
+                )
 
-        joint_mode = inputs.get('joint', True)
-        new_roll = inputs.get('new_roll', True)
+        joint_mode = inputs.get("joint", True)
+        new_roll = inputs.get("new_roll", True)
 
         if not joint_mode:
             out = zip(*[self(**inp) for inp in self._split_inputs(inputs)])
@@ -67,8 +69,13 @@ class Transform:
 
     def _split_inputs(self, inputs):
         var_names = [k for k in inputs.keys() if k in self._valid_inputs]
-        split_inputs = [{k: v for k, v in zip(var_names, vals)} for vals in zip(*[inputs[vn] for vn in var_names])]
-        for arg_name, arg_val in filter(lambda it: it[0] != 'joint' and it[0] in self._valid_args, inputs.items()):
+        split_inputs = [
+            {k: v for k, v in zip(var_names, vals)}
+            for vals in zip(*[inputs[vn] for vn in var_names])
+        ]
+        for arg_name, arg_val in filter(
+            lambda it: it[0] != "joint" and it[0] in self._valid_args, inputs.items()
+        ):
             if isinstance(arg_val, list):
                 for inp, av in zip(split_inputs, arg_val):
                     inp[arg_name] = av
@@ -78,11 +85,11 @@ class Transform:
         return split_inputs
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
+        format_string = self.__class__.__name__ + "("
         for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
         return format_string
 
 
@@ -91,8 +98,8 @@ class TransformBase:
 
     def __init__(self):
         """2020.12.24 Add 'att' to valid inputs"""
-        self._valid_inputs = ['image', 'coords', 'bbox', 'mask', 'att']
-        self._valid_args = ['new_roll']
+        self._valid_inputs = ["image", "coords", "bbox", "mask", "att"]
+        self._valid_args = ["new_roll"]
         self._valid_all = self._valid_inputs + self._valid_args
         self._rand_params = None
 
@@ -102,7 +109,7 @@ class TransformBase:
         input_args = {k: v for k, v in inputs.items() if k in self._valid_args}
 
         # Roll random parameters for the transform
-        if input_args.get('new_roll', True):
+        if input_args.get("new_roll", True):
             rand_params = self.roll()
             if rand_params is None:
                 rand_params = ()
@@ -113,8 +120,8 @@ class TransformBase:
         outputs = dict()
         for var_name, var in input_vars.items():
             if var is not None:
-                transform_func = getattr(self, 'transform_' + var_name)
-                if var_name in ['coords', 'bbox']:
+                transform_func = getattr(self, "transform_" + var_name)
+                if var_name in ["coords", "bbox"]:
                     params = (self._get_image_size(input_vars),) + self._rand_params
                 else:
                     params = self._rand_params
@@ -126,7 +133,7 @@ class TransformBase:
 
     def _get_image_size(self, inputs):
         im = None
-        for var_name in ['image', 'mask']:
+        for var_name in ["image", "mask"]:
             if inputs.get(var_name) is not None:
                 im = inputs[var_name]
                 break
@@ -138,7 +145,7 @@ class TransformBase:
             return im.shape[:2]
         if torch.is_tensor(im):
             return (im.shape[-2], im.shape[-1])
-        raise Exception('Unknown image type')
+        raise Exception("Unknown image type")
 
     def roll(self):
         return None
@@ -167,7 +174,9 @@ class TransformBase:
 
         coord_all = torch.tensor([[y1, y1, y2, y2], [x1, x2, x2, x1]])
 
-        coord_transf = self.transform_coords(coord_all, image_shape, *rand_params).flip(0)
+        coord_transf = self.transform_coords(coord_all, image_shape, *rand_params).flip(
+            0
+        )
         tl = torch.min(coord_transf, dim=1)[0]
         sz = torch.max(coord_transf, dim=1)[0] - tl
         bbox_out = torch.cat((tl, sz), dim=-1).reshape(bbox.shape)
@@ -219,7 +228,9 @@ class ToTensorAndJitter(TransformBase):
         self.normalize = normalize
 
     def roll(self):
-        return np.random.uniform(max(0, 1 - self.brightness_jitter), 1 + self.brightness_jitter)
+        return np.random.uniform(
+            max(0, 1 - self.brightness_jitter), 1 + self.brightness_jitter
+        )
 
     def transform_image(self, image, brightness_factor):
         # handle numpy array
@@ -273,7 +284,7 @@ class ToGrayscale(TransformBase):
     def transform_image(self, image, do_grayscale):
         if do_grayscale:
             if torch.is_tensor(image):
-                raise NotImplementedError('Implement torch variant.')
+                raise NotImplementedError("Implement torch variant.")
             img_gray = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
             return np.stack([img_gray, img_gray, img_gray], axis=2)
             # return np.repeat(np.sum(img * self.color_weights, axis=2, keepdims=True).astype(np.uint8), 3, axis=2)
@@ -285,7 +296,7 @@ class ToBGR(TransformBase):
 
     def transform_image(self, image):
         if torch.is_tensor(image):
-            raise NotImplementedError('Implement torch variant.')
+            raise NotImplementedError("Implement torch variant.")
         img_bgr = cv.cvtColor(image, cv.COLOR_RGB2BGR)
         return img_bgr
 

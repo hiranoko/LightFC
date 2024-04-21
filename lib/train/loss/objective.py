@@ -1,9 +1,9 @@
 import torch
-from .focal_loss import FocalLoss
-from .box_loss import giou_loss, ciou_loss, siou_loss, eiou_loss, wiou_loss
-from torch.nn.functional import l1_loss, smooth_l1_loss
 import torch.nn as nn
+from torch.nn.functional import l1_loss, smooth_l1_loss
 
+from .box_loss import ciou_loss, eiou_loss, giou_loss, siou_loss, wiou_loss
+from .focal_loss import FocalLoss
 from .gfocal_loss import DistributionFocalLoss
 from .varifocal_loss import VarifocalLoss
 
@@ -13,30 +13,29 @@ class lightTrackObjective(object):
         super(lightTrackObjective, self).__init__()
 
         # l loss
-        if cfg.TRAIN.L_LOSS == 'l1':
+        if cfg.TRAIN.L_LOSS == "l1":
             self.l1 = l1_loss
-        elif cfg.TRAIN.L_LOSS == 'smooth_l1':
+        elif cfg.TRAIN.L_LOSS == "smooth_l1":
             self.smooth_l1 = smooth_l1_loss
         else:
             pass
 
         # box iou
-        if cfg.TRAIN.BOX_LOSS == 'giou':
+        if cfg.TRAIN.BOX_LOSS == "giou":
             self.iou = giou_loss
-        elif cfg.TRAIN.BOX_LOSS == 'ciou':
+        elif cfg.TRAIN.BOX_LOSS == "ciou":
             self.iou = ciou_loss
-        elif cfg.TRAIN.BOX_LOSS == 'siou':
+        elif cfg.TRAIN.BOX_LOSS == "siou":
             self.iou = siou_loss
-        elif cfg.TRAIN.BOX_LOSS == 'wiou':
+        elif cfg.TRAIN.BOX_LOSS == "wiou":
             self.iou = wiou_loss
-        elif cfg.TRAIN.BOX_LOSS == 'eiou':
+        elif cfg.TRAIN.BOX_LOSS == "eiou":
             self.iou = eiou_loss
         else:
             pass
 
         # cls iou
-        if cfg.TRAIN.CLS_LOSS == 'focal':
+        if cfg.TRAIN.CLS_LOSS == "focal":
             self.focal_loss = FocalLoss()
-        elif cfg.TRAIN.CLS_LOSS == 'varifocal':
+        elif cfg.TRAIN.CLS_LOSS == "varifocal":
             self.focal_loss = VarifocalLoss()
-

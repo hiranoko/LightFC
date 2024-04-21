@@ -1,6 +1,6 @@
-import torch
 import time
 
+import torch
 from torch import nn
 
 from lib.models.lightfc import MobileNetV2, repn33_se_center_concat
@@ -16,13 +16,13 @@ class lightTrack_track(nn.Module):
         self.head = repn33_se_center_concat(inplanes=192, channel=256)
 
         for module in self.backbone.modules():
-            if hasattr(module, 'switch_to_deploy'):
+            if hasattr(module, "switch_to_deploy"):
                 module.switch_to_deploy()
         for module in self.fusion.modules():
-            if hasattr(module, 'switch_to_deploy'):
+            if hasattr(module, "switch_to_deploy"):
                 module.switch_to_deploy()
         for module in self.head.modules():
-            if hasattr(module, 'switch_to_deploy'):
+            if hasattr(module, "switch_to_deploy"):
                 module.switch_to_deploy()
 
     def forward(self, z, x):
@@ -55,4 +55,4 @@ if __name__ == "__main__":
         for i in range(T_t):
             oup = model(z_feat, x)
         t_e = time.time()
-        print('speed: %.2f FPS' % (T_t / (t_e - t_s)))
+        print("speed: %.2f FPS" % (T_t / (t_e - t_s)))

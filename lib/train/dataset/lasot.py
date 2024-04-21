@@ -10,11 +10,12 @@ import torch
 
 from lib.train.admin import env_settings
 from lib.train.data import jpeg4py_loader
+
 from .base_video_dataset import BaseVideoDataset
 
 
 class Lasot(BaseVideoDataset):
-    """ LaSOT dataset.
+    """LaSOT dataset.
 
     Publication:
         LaSOT: A High-quality Benchmark for Large-scale Single Object Tracking
@@ -25,8 +26,15 @@ class Lasot(BaseVideoDataset):
     Download the dataset from https://cis.temple.edu/lasot/download.html
     """
 
-    def __init__(self, root=None, image_loader=jpeg4py_loader, vid_ids=None, split=None, data_fraction=None,
-                 env_num=None):
+    def __init__(
+        self,
+        root=None,
+        image_loader=jpeg4py_loader,
+        vid_ids=None,
+        split=None,
+        data_fraction=None,
+        env_num=None,
+    ):
         """
         args:
             root - path to the lasot dataset.
@@ -39,41 +47,51 @@ class Lasot(BaseVideoDataset):
             data_fraction - Fraction of dataset to be used. The complete dataset is used by default
         """
         root = env_settings(env_num).lasot_dir if root is None else root
-        super().__init__('LaSOT', root, image_loader)
+        super().__init__("LaSOT", root, image_loader)
 
         # Keep a list of all classes
         self.class_list = [f for f in os.listdir(self.root)]
-        self.class_to_id = {cls_name: cls_id for cls_id, cls_name in enumerate(self.class_list)}
+        self.class_to_id = {
+            cls_name: cls_id for cls_id, cls_name in enumerate(self.class_list)
+        }
 
         self.sequence_list = self._build_sequence_list(vid_ids, split)
 
         if data_fraction is not None:
-            self.sequence_list = random.sample(self.sequence_list, int(len(self.sequence_list) * data_fraction))
+            self.sequence_list = random.sample(
+                self.sequence_list, int(len(self.sequence_list) * data_fraction)
+            )
 
         self.seq_per_class = self._build_class_list()
 
     def _build_sequence_list(self, vid_ids=None, split=None):
         if split is not None:
             if vid_ids is not None:
-                raise ValueError('Cannot set both split_name and vid_ids.')
-            ltr_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..')
-            if split == 'train':
-                file_path = os.path.join(ltr_path, 'data_specs', 'lasot_train_split.txt')
+                raise ValueError("Cannot set both split_name and vid_ids.")
+            ltr_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
+            if split == "train":
+                file_path = os.path.join(
+                    ltr_path, "data_specs", "lasot_train_split.txt"
+                )
             else:
-                raise ValueError('Unknown split name.')
+                raise ValueError("Unknown split name.")
             # sequence_list = pandas.read_csv(file_path, header=None, squeeze=True).values.tolist()
-            sequence_list = pandas.read_csv(file_path, header=None).squeeze("columns").values.tolist()
+            sequence_list = (
+                pandas.read_csv(file_path, header=None)
+                .squeeze("columns")
+                .values.tolist()
+            )
         elif vid_ids is not None:
-            sequence_list = [c + '-' + str(v) for c in self.class_list for v in vid_ids]
+            sequence_list = [c + "-" + str(v) for c in self.class_list for v in vid_ids]
         else:
-            raise ValueError('Set either split_name or vid_ids.')
+            raise ValueError("Set either split_name or vid_ids.")
 
         return sequence_list
 
     def _build_class_list(self):
         seq_per_class = {}
         for seq_id, seq_name in enumerate(self.sequence_list):
-            class_name = seq_name.split('-')[0]
+            class_name = seq_name.split("-")[0]
             if class_name in seq_per_class:
                 seq_per_class[class_name].append(seq_id)
             else:
@@ -82,7 +100,7 @@ class Lasot(BaseVideoDataset):
         return seq_per_class
 
     def get_name(self):
-        return 'lasot'
+        return "lasot"
 
     def has_class_info(self):
         return True
@@ -101,8 +119,14 @@ class Lasot(BaseVideoDataset):
 
     def _read_bb_anno(self, seq_path):
         bb_anno_file = os.path.join(seq_path, "groundtruth.txt")
-        gt = pandas.read_csv(bb_anno_file, delimiter=',', header=None, dtype=np.float32, na_filter=False,
-                             low_memory=False).values
+        gt = pandas.read_csv(
+            bb_anno_file,
+            delimiter=",",
+            header=None,
+            dtype=np.float32,
+            na_filter=False,
+            low_memory=False,
+        ).values
         return torch.tensor(gt)
 
     def _read_target_visible(self, seq_path):
@@ -110,9 +134,9 @@ class Lasot(BaseVideoDataset):
         occlusion_file = os.path.join(seq_path, "full_occlusion.txt")
         out_of_view_file = os.path.join(seq_path, "out_of_view.txt")
 
-        with open(occlusion_file, 'r', newline='') as f:
+        with open(occlusion_file, "r", newline="") as f:
             occlusion = torch.ByteTensor([int(v) for v in list(csv.reader(f))[0]])
-        with open(out_of_view_file, 'r') as f:
+        with open(out_of_view_file, "r") as f:
             out_of_view = torch.ByteTensor([int(v) for v in list(csv.reader(f))[0]])
 
         target_visible = ~occlusion & ~out_of_view
@@ -121,10 +145,10 @@ class Lasot(BaseVideoDataset):
 
     def _get_sequence_path(self, seq_id):
         seq_name = self.sequence_list[seq_id]
-        class_name = seq_name.split('-')[0]
-        vid_id = seq_name.split('-')[1]
+        class_name = seq_name.split("-")[0]
+        vid_id = seq_name.split("-")[1]
 
-        return os.path.join(self.root, class_name, class_name + '-' + vid_id)
+        return os.path.join(self.root, class_name, class_name + "-" + vid_id)
 
     def get_sequence_info(self, seq_id):
         seq_path = self._get_sequence_path(seq_id)
@@ -133,16 +157,18 @@ class Lasot(BaseVideoDataset):
         valid = (bbox[:, 2] > 0) & (bbox[:, 3] > 0)
         visible = self._read_target_visible(seq_path) & valid.byte()
 
-        return {'bbox': bbox, 'valid': valid, 'visible': visible}
+        return {"bbox": bbox, "valid": valid, "visible": visible}
 
     def _get_frame_path(self, seq_path, frame_id):
-        return os.path.join(seq_path, 'img', '{:08}.jpg'.format(frame_id + 1))  # frames start from 1
+        return os.path.join(
+            seq_path, "img", "{:08}.jpg".format(frame_id + 1)
+        )  # frames start from 1
 
     def _get_frame(self, seq_path, frame_id):
         return self.image_loader(self._get_frame_path(seq_path, frame_id))
 
     def _get_class(self, seq_path):
-        raw_class = seq_path.split('/')[-2]
+        raw_class = seq_path.split("/")[-2]
         return raw_class
 
     def get_class_name(self, seq_id):
@@ -164,10 +190,14 @@ class Lasot(BaseVideoDataset):
         for key, value in anno.items():
             anno_frames[key] = [value[f_id, ...].clone() for f_id in frame_ids]
 
-        object_meta = OrderedDict({'object_class_name': obj_class,
-                                   'motion_class': None,
-                                   'major_class': None,
-                                   'root_class': None,
-                                   'motion_adverb': None})
+        object_meta = OrderedDict(
+            {
+                "object_class_name": obj_class,
+                "motion_class": None,
+                "major_class": None,
+                "root_class": None,
+                "motion_adverb": None,
+            }
+        )
 
         return frame_list, anno_frames, object_meta

@@ -1,8 +1,10 @@
-import numpy as np
+import argparse
 import os
 import shutil
-import argparse
+
 import _init_paths
+import numpy as np
+
 from lib.test.evaluation.environment import env_settings
 
 
@@ -10,7 +12,9 @@ def transform_got10k(tracker_name, cfg_name):
     env = env_settings(env_num=0)
     result_dir = env.results_path
     src_dir = os.path.join(result_dir, "%s/%s/got10k/" % (tracker_name, cfg_name))
-    dest_dir = os.path.join(result_dir, "%s/%s/got10k_submit/" % (tracker_name, cfg_name))
+    dest_dir = os.path.join(
+        result_dir, "%s/%s/got10k_submit/" % (tracker_name, cfg_name)
+    )
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
     items = os.listdir(src_dir)
@@ -19,16 +23,16 @@ def transform_got10k(tracker_name, cfg_name):
             continue
         src_path = os.path.join(src_dir, item)
         if "time" not in item:
-            seq_name = item.replace(".txt", '')
+            seq_name = item.replace(".txt", "")
             seq_dir = os.path.join(dest_dir, seq_name)
             if not os.path.exists(seq_dir):
                 os.makedirs(seq_dir)
-            new_item = item.replace(".txt", '_001.txt')
+            new_item = item.replace(".txt", "_001.txt")
             dest_path = os.path.join(seq_dir, new_item)
-            bbox_arr = np.loadtxt(src_path, dtype=np.int64, delimiter='\t')
-            np.savetxt(dest_path, bbox_arr, fmt='%d', delimiter=',')
+            bbox_arr = np.loadtxt(src_path, dtype=np.int64, delimiter="\t")
+            np.savetxt(dest_path, bbox_arr, fmt="%d", delimiter=",")
         else:
-            seq_name = item.replace("_time.txt", '')
+            seq_name = item.replace("_time.txt", "")
             seq_dir = os.path.join(dest_dir, seq_name)
             if not os.path.exists(seq_dir):
                 os.makedirs(seq_dir)
@@ -44,10 +48,12 @@ def transform_got10k(tracker_name, cfg_name):
 
 if __name__ == "__main__":
     if __name__ == "__main__":
-        parser = argparse.ArgumentParser(description='transform trackingnet results.')
-        parser.add_argument('--tracker_name', type=str, help='Name of tracking method.')
-        parser.add_argument('--cfg_name', type=str, help='Name of config file.')
+        parser = argparse.ArgumentParser(description="transform trackingnet results.")
+        parser.add_argument("--tracker_name", type=str, help="Name of tracking method.")
+        parser.add_argument("--cfg_name", type=str, help="Name of config file.")
 
         args = parser.parse_args()
-        transform_got10k('lightfc',
-                         'mobilenetv2_p_pwcorr_se_ffn_next_concat_repn_33_se_center_concat_adamw_wiou')
+        transform_got10k(
+            "lightfc",
+            "mobilenetv2_p_pwcorr_se_ffn_next_concat_repn_33_se_center_concat_adamw_wiou",
+        )

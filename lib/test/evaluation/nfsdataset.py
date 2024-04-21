@@ -1,11 +1,11 @@
 import numpy as np
 
-from lib.test.evaluation.data import Sequence, BaseDataset, SequenceList
+from lib.test.evaluation.data import BaseDataset, Sequence, SequenceList
 from lib.test.utils.load_text import load_text
 
 
 class NFSDataset(BaseDataset):
-    """ NFS dataset.
+    """NFS dataset.
     Publication:
         Need for Speed: A Benchmark for Higher Frame Rate Object Tracking
         H. Kiani Galoogahi, A. Fagg, C. Huang, D. Ramanan, and S.Lucey
@@ -20,30 +20,43 @@ class NFSDataset(BaseDataset):
         self.sequence_info_list = self._get_sequence_info_list()
 
     def get_sequence_list(self):
-        return SequenceList([self._construct_sequence(s) for s in self.sequence_info_list])
+        return SequenceList(
+            [self._construct_sequence(s) for s in self.sequence_info_list]
+        )
 
     def _construct_sequence(self, sequence_info):
-        sequence_path = sequence_info['path']
-        nz = sequence_info['nz']
-        ext = sequence_info['ext']
-        start_frame = sequence_info['startFrame']
-        end_frame = sequence_info['endFrame']
+        sequence_path = sequence_info["path"]
+        nz = sequence_info["nz"]
+        ext = sequence_info["ext"]
+        start_frame = sequence_info["startFrame"]
+        end_frame = sequence_info["endFrame"]
 
         init_omit = 0
-        if 'initOmit' in sequence_info:
-            init_omit = sequence_info['initOmit']
+        if "initOmit" in sequence_info:
+            init_omit = sequence_info["initOmit"]
 
-        frames = ['{base_path}/{sequence_path}/{frame:0{nz}}.{ext}'.format(base_path=self.base_path,
-                                                                           sequence_path=sequence_path, frame=frame_num,
-                                                                           nz=nz, ext=ext) for frame_num in
-                  range(start_frame + init_omit, end_frame + 1)]
+        frames = [
+            "{base_path}/{sequence_path}/{frame:0{nz}}.{ext}".format(
+                base_path=self.base_path,
+                sequence_path=sequence_path,
+                frame=frame_num,
+                nz=nz,
+                ext=ext,
+            )
+            for frame_num in range(start_frame + init_omit, end_frame + 1)
+        ]
 
-        anno_path = '{}/{}'.format(self.base_path, sequence_info['anno_path'])
+        anno_path = "{}/{}".format(self.base_path, sequence_info["anno_path"])
 
-        ground_truth_rect = load_text(str(anno_path), delimiter='\t', dtype=np.float64)
+        ground_truth_rect = load_text(str(anno_path), delimiter="\t", dtype=np.float64)
 
-        return Sequence(sequence_info['name'], frames, 'nfs', ground_truth_rect[init_omit:, :],
-                        object_class=sequence_info['object_class'])
+        return Sequence(
+            sequence_info["name"],
+            frames,
+            "nfs",
+            ground_truth_rect[init_omit:, :],
+            object_class=sequence_info["object_class"],
+        )
 
     def __len__(self):
         return len(self.sequence_info_list)
@@ -271,24 +284,72 @@ class NFSDataset(BaseDataset):
         #      "ext": "jpg", "anno_path": "anno/nfs_zebra_fish.txt", "object_class": "fish", 'occlusion': False},
         # ]
         sequence_info_list = [
-            {"name": "nfs_Gymnastics", "path": "sequences/Gymnastics", "startFrame": 1, "endFrame": 368, "nz": 5,
-             "ext": "jpg", "anno_path": "anno/nfs_Gymnastics.txt", "object_class": "person", 'occlusion': False},
-
-            {"name": "nfs_MachLoop_jet", "path": "sequences/MachLoop_jet", "startFrame": 1, "endFrame": 99, "nz": 5,
-             "ext": "jpg", "anno_path": "anno/nfs_MachLoop_jet.txt", "object_class": "aircraft", 'occlusion': False},
-
-            {"name": "nfs_Skiing_red", "path": "sequences/Skiing_red", "startFrame": 1, "endFrame": 69, "nz": 5,
-             "ext": "jpg", "anno_path": "anno/nfs_Skiing_red.txt", "object_class": "person", 'occlusion': False},
-
-            {"name": "nfs_Skydiving", "path": "sequences/Skydiving", "startFrame": 1, "endFrame": 196, "nz": 5,
-             "ext": "jpg", "anno_path": "anno/nfs_Skydiving.txt", "object_class": "person", 'occlusion': True},
-
-            {"name": "nfs_airboard_1", "path": "sequences/airboard_1", "startFrame": 1, "endFrame": 425, "nz": 5,
-             "ext": "jpg", "anno_path": "anno/nfs_airboard_1.txt", "object_class": "ball", 'occlusion': False},
-            {"name": "nfs_airplane_landing", "path": "sequences/airplane_landing", "startFrame": 1, "endFrame": 81,
-             "nz": 5, "ext": "jpg", "anno_path": "anno/nfs_airplane_landing.txt", "object_class": "aircraft",
-             'occlusion': False},
-
+            {
+                "name": "nfs_Gymnastics",
+                "path": "sequences/Gymnastics",
+                "startFrame": 1,
+                "endFrame": 368,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_Gymnastics.txt",
+                "object_class": "person",
+                "occlusion": False,
+            },
+            {
+                "name": "nfs_MachLoop_jet",
+                "path": "sequences/MachLoop_jet",
+                "startFrame": 1,
+                "endFrame": 99,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_MachLoop_jet.txt",
+                "object_class": "aircraft",
+                "occlusion": False,
+            },
+            {
+                "name": "nfs_Skiing_red",
+                "path": "sequences/Skiing_red",
+                "startFrame": 1,
+                "endFrame": 69,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_Skiing_red.txt",
+                "object_class": "person",
+                "occlusion": False,
+            },
+            {
+                "name": "nfs_Skydiving",
+                "path": "sequences/Skydiving",
+                "startFrame": 1,
+                "endFrame": 196,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_Skydiving.txt",
+                "object_class": "person",
+                "occlusion": True,
+            },
+            {
+                "name": "nfs_airboard_1",
+                "path": "sequences/airboard_1",
+                "startFrame": 1,
+                "endFrame": 425,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_airboard_1.txt",
+                "object_class": "ball",
+                "occlusion": False,
+            },
+            {
+                "name": "nfs_airplane_landing",
+                "path": "sequences/airplane_landing",
+                "startFrame": 1,
+                "endFrame": 81,
+                "nz": 5,
+                "ext": "jpg",
+                "anno_path": "anno/nfs_airplane_landing.txt",
+                "object_class": "aircraft",
+                "occlusion": False,
+            },
         ]
 
         return sequence_info_list

@@ -11,15 +11,15 @@ def make_full_size(x, output_sz):
         return x
     pad_x = output_sz[0] - x.shape[1]
     if pad_x < 0:
-        x = x[:, :x.shape[1] + pad_x]
+        x = x[:, : x.shape[1] + pad_x]
         # padding has to be set to zero, otherwise pad function fails
         pad_x = 0
     pad_y = output_sz[1] - x.shape[0]
     if pad_y < 0:
-        x = x[:x.shape[0] + pad_y, :]
+        x = x[: x.shape[0] + pad_y, :]
         # padding has to be set to zero, otherwise pad function fails
         pad_y = 0
-    return np.pad(x, ((0, pad_y), (0, pad_x)), 'constant', constant_values=0)
+    return np.pad(x, ((0, pad_y), (0, pad_x)), "constant", constant_values=0)
 
 
 def rect_from_mask(mask):

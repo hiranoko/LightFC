@@ -1,6 +1,7 @@
 import random
-import torch.utils.data
+
 import numpy as np
+import torch.utils.data
 
 
 class SequenceSampler(torch.utils.data.Dataset):
@@ -8,8 +9,18 @@ class SequenceSampler(torch.utils.data.Dataset):
     Sample sequence for sequence-level training
     """
 
-    def __init__(self, datasets, p_datasets, samples_per_epoch, max_gap,
-                 num_search_frames, num_template_frames=1, frame_sample_mode='sequential', max_interval=10, prob=0.7):
+    def __init__(
+        self,
+        datasets,
+        p_datasets,
+        samples_per_epoch,
+        max_gap,
+        num_search_frames,
+        num_template_frames=1,
+        frame_sample_mode="sequential",
+        max_interval=10,
+        prob=0.7,
+    ):
         """
         args:
             datasets - List of datasets to be used for training
@@ -46,7 +57,7 @@ class SequenceSampler(torch.utils.data.Dataset):
         return self.samples_per_epoch
 
     def _sample_visible_ids(self, visible, num_ids=1, min_id=None, max_id=None):
-        """ Samples num_ids frames between min_id and max_id for which target is visible
+        """Samples num_ids frames between min_id and max_id for which target is visible
 
         args:
             visible - 1d Tensor indicating whether target is visible for each frame
@@ -74,18 +85,23 @@ class SequenceSampler(torch.utils.data.Dataset):
 
     def _sequential_sample(self, visible):
         # Sample frames in sequential manner
-        template_frame_ids = self._sample_visible_ids(visible, num_ids=1, min_id=0,
-                                                      max_id=len(visible) - self.num_search_frames)
+        template_frame_ids = self._sample_visible_ids(
+            visible, num_ids=1, min_id=0, max_id=len(visible) - self.num_search_frames
+        )
         if self.max_gap == -1:
             left = template_frame_ids[0]
         else:
             # template frame (1) ->(max_gap) -> search frame (num_search_frames)
-            left_max = min(len(visible) - self.num_search_frames, template_frame_ids[0] + self.max_gap)
-            left = self._sample_visible_ids(visible, num_ids=1, min_id=template_frame_ids[0],
-                                            max_id=left_max)[0]
+            left_max = min(
+                len(visible) - self.num_search_frames,
+                template_frame_ids[0] + self.max_gap,
+            )
+            left = self._sample_visible_ids(
+                visible, num_ids=1, min_id=template_frame_ids[0], max_id=left_max
+            )[0]
 
         valid_ids = [i for i in range(left, len(visible)) if visible[i]]
-        search_frame_ids = valid_ids[:self.num_search_frames]
+        search_frame_ids = valid_ids[: self.num_search_frames]
 
         # if length is not enough
         last = search_frame_ids[-1]
@@ -109,9 +125,12 @@ class SequenceSampler(torch.utils.data.Dataset):
             avg_interval = max(avg_interval - 1, 1)
 
         while True:
-            template_frame_ids = self._sample_visible_ids(visible, num_ids=1, min_id=0,
-                                                          max_id=len(visible) - avg_interval * (
-                                                                      self.num_search_frames - 1))
+            template_frame_ids = self._sample_visible_ids(
+                visible,
+                num_ids=1,
+                min_id=0,
+                max_id=len(visible) - avg_interval * (self.num_search_frames - 1),
+            )
             if template_frame_ids == None:
                 avg_interval = avg_interval - 1
             else:
@@ -131,10 +150,15 @@ class SequenceSampler(torch.utils.data.Dataset):
 
             while True:
                 left_max = min(
-                    max(len(visible) - avg_interval * (self.num_search_frames - 1), template_frame_ids[0] + 1),
-                    template_frame_ids[0] + self.max_gap)
-                search_frame_ids = self._sample_visible_ids(visible, num_ids=1, min_id=template_frame_ids[0],
-                                                            max_id=left_max)
+                    max(
+                        len(visible) - avg_interval * (self.num_search_frames - 1),
+                        template_frame_ids[0] + 1,
+                    ),
+                    template_frame_ids[0] + self.max_gap,
+                )
+                search_frame_ids = self._sample_visible_ids(
+                    visible, num_ids=1, min_id=template_frame_ids[0], max_id=left_max
+                )
 
                 if search_frame_ids == None:
                     avg_interval = avg_interval - 1
@@ -147,11 +171,14 @@ class SequenceSampler(torch.utils.data.Dataset):
 
         # Sample rest of the search frames with random interval
         last = search_frame_ids[0]
-        while last <= len(visible) - 1 and len(search_frame_ids) < self.num_search_frames:
+        while (
+            last <= len(visible) - 1 and len(search_frame_ids) < self.num_search_frames
+        ):
             # sample id with interval
             max_id = min(last + self.max_interval + 1, len(visible))
-            id = self._sample_visible_ids(visible, num_ids=1, min_id=last,
-                                          max_id=max_id)
+            id = self._sample_visible_ids(
+                visible, num_ids=1, min_id=last, max_id=max_id
+            )
 
             if id is None:
                 # If not found in current range, find from previous range
@@ -162,11 +189,19 @@ class SequenceSampler(torch.utils.data.Dataset):
 
         # if length is not enough, randomly sample new ids
         if len(search_frame_ids) < self.num_search_frames:
-            valid_ids = [x for x in valid_ids if x > search_frame_ids[0] and x not in search_frame_ids]
+            valid_ids = [
+                x
+                for x in valid_ids
+                if x > search_frame_ids[0] and x not in search_frame_ids
+            ]
 
             if len(valid_ids) > 0:
-                new_ids = random.choices(valid_ids, k=min(len(valid_ids),
-                                                          self.num_search_frames - len(search_frame_ids)))
+                new_ids = random.choices(
+                    valid_ids,
+                    k=min(
+                        len(valid_ids), self.num_search_frames - len(search_frame_ids)
+                    ),
+                )
                 search_frame_ids = search_frame_ids + new_ids
                 search_frame_ids = sorted(search_frame_ids, key=int)
 
@@ -201,23 +236,27 @@ class SequenceSampler(torch.utils.data.Dataset):
 
             # Sample frames
             seq_info_dict = dataset.get_sequence_info(seq_id)
-            visible = seq_info_dict['visible']
+            visible = seq_info_dict["visible"]
 
             enough_visible_frames = visible.type(torch.int64).sum().item() > 2 * (
-                    self.num_search_frames + self.num_template_frames) and len(visible) >= (
-                                                self.num_search_frames + self.num_template_frames)
+                self.num_search_frames + self.num_template_frames
+            ) and len(visible) >= (self.num_search_frames + self.num_template_frames)
 
             enough_visible_frames = enough_visible_frames or not is_video_dataset
 
         if is_video_dataset:
-            if self.frame_sample_mode == 'sequential':
+            if self.frame_sample_mode == "sequential":
                 template_frame_ids, search_frame_ids = self._sequential_sample(visible)
 
-            elif self.frame_sample_mode == 'random_interval':
+            elif self.frame_sample_mode == "random_interval":
                 if random.random() < self.prob:
-                    template_frame_ids, search_frame_ids = self._random_interval_sample(visible)
+                    template_frame_ids, search_frame_ids = self._random_interval_sample(
+                        visible
+                    )
                 else:
-                    template_frame_ids, search_frame_ids = self._sequential_sample(visible)
+                    template_frame_ids, search_frame_ids = self._sequential_sample(
+                        visible
+                    )
             else:
                 raise NotImplementedError
         else:
@@ -225,17 +264,25 @@ class SequenceSampler(torch.utils.data.Dataset):
             template_frame_ids = [1] * self.num_template_frames
             search_frame_ids = [1] * self.num_search_frames
 
-        template_frames, template_anno, meta_obj_template = dataset.get_frames(seq_id, template_frame_ids,
-                                                                               seq_info_dict)
-        search_frames, search_anno, meta_obj_search = dataset.get_frames(seq_id, search_frame_ids, seq_info_dict)
-        template_bbox = [bbox.numpy() for bbox in template_anno['bbox']]  # tensor -> numpy array
-        search_bbox = [bbox.numpy() for bbox in search_anno['bbox']]  # tensor -> numpy array
+        template_frames, template_anno, meta_obj_template = dataset.get_frames(
+            seq_id, template_frame_ids, seq_info_dict
+        )
+        search_frames, search_anno, meta_obj_search = dataset.get_frames(
+            seq_id, search_frame_ids, seq_info_dict
+        )
+        template_bbox = [
+            bbox.numpy() for bbox in template_anno["bbox"]
+        ]  # tensor -> numpy array
+        search_bbox = [
+            bbox.numpy() for bbox in search_anno["bbox"]
+        ]  # tensor -> numpy array
 
-        return {'template_images': np.array(template_frames).squeeze(),  # 1 template images
-                'template_annos': np.array(template_bbox).squeeze(),
-                'search_images': np.array(search_frames),  # (num_frames) search images
-                'search_annos': np.array(search_bbox),
-                'dataset': dataset.get_name(),
-                'search_class': meta_obj_search.get('object_class_name'),
-                'num_frames': len(search_frames)
-                }
+        return {
+            "template_images": np.array(template_frames).squeeze(),  # 1 template images
+            "template_annos": np.array(template_bbox).squeeze(),
+            "search_images": np.array(search_frames),  # (num_frames) search images
+            "search_annos": np.array(search_bbox),
+            "dataset": dataset.get_name(),
+            "search_class": meta_obj_search.get("object_class_name"),
+            "num_frames": len(search_frames),
+        }
