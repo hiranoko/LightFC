@@ -1,9 +1,11 @@
 import argparse
+import sys
 
 import torch
 import torch.nn as nn
 from thop import clever_format, profile
 
+sys.path.append("./")
 from lib.models.lightfc import MobileNetV2, repn33_se_center_concat
 from lib.models.lightfc.fusion.ecm import pwcorr_se_repn31_sc_iab_sc_adj_concat
 

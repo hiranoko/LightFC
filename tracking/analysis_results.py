@@ -1,7 +1,11 @@
+import sys
+
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.figsize"] = [8, 8]
 env_num = 0
+
+sys.path.append("./")
 from lib.test.analysis.plot_results import print_results
 from lib.test.evaluation import get_dataset, trackerlist
 

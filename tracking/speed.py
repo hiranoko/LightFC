@@ -1,8 +1,10 @@
+import sys
 import time
 
 import torch
 from torch import nn
 
+sys.path.append("./")
 from lib.models.lightfc import MobileNetV2, repn33_se_center_concat
 from lib.models.lightfc.fusion.ecm import pwcorr_se_repn31_sc_iab_sc_adj_concat
 
