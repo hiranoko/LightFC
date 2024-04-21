@@ -17,17 +17,17 @@ def local_env_settings(env_num):
     settings.nfs_path = r""
     settings.otb_path = r"/media/liyunfeng/CV2/data/sot/otb"
     settings.dtb_path = r""
-    settings.prj_dir = r"/home/liyunfeng/code/project2/LightFC"
+    settings.prj_dir = r"/home/kota/work/LightFC"
     settings.result_plot_path = (
-        r"/home/liyunfeng/code/project2/LightFC/output/test/result_plots"
+        r"/home/kota/work/LightFC/output/test/result_plots"
     )
     # Where to store tracking results
     settings.results_path = (
-        r"/home/liyunfeng/code/project2/LightFC/output/test/tracking_results"
+        r"/home/kota/work/LightFC/output/test/tracking_results"
     )
-    settings.save_dir = r"/home/liyunfeng/code/project2/LightFC/output"
+    settings.save_dir = r"/home/kota/work/LightFC/output"
     settings.segmentation_path = (
-        r"/home/liyunfeng/code/project2/LightFC/output/test/segmentation_results"
+        r"/home/kota/work/LightFC/output/test/segmentation_results"
     )
     settings.tc128_path = r"/media/liyunfeng/CV2/data/sot/tc128"
     settings.tn_packed_results_path = r""

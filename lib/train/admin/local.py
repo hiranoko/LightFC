@@ -1,9 +1,9 @@
 class EnvironmentSettings:
     def __init__(self, env_num=0):
-        self.workspace_dir = r"/home/liyunfeng/code/project2/LightFC"  # Base directory for saving network checkpoints.
-        self.tensorboard_dir = r"/home/liyunfeng/code/project2/LightFC/tensorboard"  # Directory for tensorboard files.
+        self.workspace_dir = r"/home/kota/work/LightFC"  # Base directory for saving network checkpoints.
+        self.tensorboard_dir = r"/home/kota/work/LightFC/tensorboard"  # Directory for tensorboard files.
         self.pretrained_networks = (
-            r"/home/liyunfeng/code/project2/LightFC/pretrained_models"
+            r"/home/kota/work/LightFC/pretrained_models"
         )
 
         self.lasot_dir = ""
